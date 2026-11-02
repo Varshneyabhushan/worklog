@@ -20,7 +20,7 @@ night routines, `az` / `gh` / Linear / git steps, and the rules on wording and a
 | Item | Decision |
 |---|---|
 | Repo | `~/repos/worklog`, local git |
-| Process | Python MCP server, streamable HTTP on `127.0.0.1:<port>`, run as a systemd user service in WSL |
+| Process | Node.js (TypeScript) service exposing MCP over streamable HTTP on `127.0.0.1:<port>`, run as a systemd user service in WSL |
 | Store | SQLite at `~/.local/share/worklog/worklog.db` (WSL disk, never `/mnt/c`); the service is the only process that opens it |
 | Clients | Claude Code (terminal and the Desktop Code tab) and Codex, both over MCP. The Desktop Chat tab is out of scope |
 | Human interfaces | a local web UI served by the same process, and an MCP App rendered inside Claude |

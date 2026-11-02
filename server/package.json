@@ -1,0 +1,23 @@
+{
+   "name": "worklog-server",
+   "version": "0.1.0",
+   "private": true,
+   "main": "dist/index.js",
+   "engines": {
+      "node": ">=22.12"
+   },
+   "scripts": {
+      "prebuild": "rm -rf dist/",
+      "build": "tsc",
+      "test": "vitest run",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "format": "prettier --config prettierrc.json --write \"src/**/*.{ts,js,json}\" \"tests/**/*.ts\" \"*.json\"",
+      "format:check": "prettier --config prettierrc.json --check \"src/**/*.{ts,js,json}\" \"tests/**/*.ts\" \"*.json\""
+   },
+   "devDependencies": {
+      "@types/node": "^22.20.5",
+      "prettier": "^3.9.10",
+      "typescript": "^5.9.3",
+      "vitest": "^5.1.0"
+   }
+}
