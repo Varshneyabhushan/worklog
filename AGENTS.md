@@ -55,6 +55,9 @@ Repo-specific notes:
 - Errors come in four families in `utils/errors.ts`. Adapters map a family to a status code; the
   class name is the error code (`TaskNotFoundError` → `TASK_NOT_FOUND`). See `docs/DECISIONS.md`.
 - `adapters/workers/todaySnapshot.ts` keeps `today.json` current for the `/today` pane.
+- `migration/` (pure parsing of the old markdown day files) and `src/importHistory.ts` (the
+  one-off import, run once on 03-11-2026) stay for reference; the importer refuses a
+  database that already has data.
 
 ## Domain concepts
 

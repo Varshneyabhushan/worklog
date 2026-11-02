@@ -110,6 +110,19 @@ path and enables it.
 
 ---
 
+## D10 — Import the whole history, keeping every file verbatim
+
+**Choice:** every day file becomes its day's note and frozen Summary as written; only checkbox
+lines become tasks, their history rebuilt from the days they appear on.
+
+**Why:** the older files are free-form engineering notes that no parser maps to tasks without
+loss; keeping the text verbatim loses nothing and makes all of it searchable, while the
+checkbox lines carry the structure worth having.
+
+**Rejected:** making updates from Summary bullets — matching a bullet to its task is guesswork.
+
+---
+
 ## D11 — A marker line guards hand-written day files
 
 **Choice:** reports start with a marker comment; `sign_off_day` refuses to overwrite a file
@@ -127,4 +140,3 @@ overwrote `02-11-2026.md`; restored from git. Rebuild and restart before any liv
 - Web UI and MCP App (`web/`): not built yet.
 - Verify that the Claude Desktop Code tab renders MCP Apps, and that Codex connects to HTTP MCP.
 - Whether WSL stays up with no terminal open; if not, a Windows login task that starts it.
-- History import from the markdown archive; the worklog skill rewrite against these tools.

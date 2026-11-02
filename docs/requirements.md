@@ -219,19 +219,27 @@ MCP App is decided at build time (see §11).
 
 ## 10. Migration
 
-- One-time import of the **open** items (picked TODOs and Backlog) from the latest day file.
-- `##` heading → first tag; sub-items → sub-tasks; `⌛ reason` → `blocked_on`; `⌛ postponed`
-  → `backlog`; links parsed into `links`; ticket / PR link → `source_key`; priority `normal`,
-  no due dates; a drafted description for each.
-- `blocked_since` from the first day file where that `⌛` appears.
-- Long noisy lines (e.g. "pipeline RED 4 runs in a row …") come in as a short title, with
-  the details as their first `by: routine` update.
-- **Dry run first:** the importer prints what it would create, you correct it in one pass,
-  then it writes.
-- Clean cutover: from then on the routines read the database only. `prepare_day.py`,
-  `edit_today.py`, `locate_day.py` and `checklist.md` are retired (kept in git history).
-- Until history is imported, "when did I last touch X" searches the database first and
-  greps the archive for anything before the cutover.
+Done 03-11-2026 with `src/importHistory.ts`: every day file, not just the open items.
+
+- **Each file** → that day's day note, verbatim, and its `# Summary` → the day's frozen
+  Summary; every imported day counts as signed off.
+- **Checkbox lines** → tasks, one per piece of work across days: a carried-over line matches by
+  its text, by a text that only grew, or by its first link. Its history is rebuilt from the days
+  it appears on (created on the first, done the day it was ticked, dropped the day it got ❌),
+  at midday IST in order. An unticked line that disappeared is dropped on the day it vanished;
+  a file with no checkboxes doesn't count as a vanishing day.
+- `##` area → first tag; nested checkboxes → sub-tasks of the top-level line; plain
+  sub-bullets → the description, with the original line and source file; `⌛ reason` →
+  `blockedOn`, `⌛ postponed` → `backlog`; links typed by URL; trailing `- [slack](…)`-style
+  deep links kept as links, not title words.
+- Timed meeting lines → meetings on that day.
+- Not imported: the sign-in / sign-off checklists. No updates are made up from Summary bullets.
+- Open tasks with a ticket or PR link got their source key.
+- The importer refuses a database that already has tasks or days; without `--write` it applies
+  the plan to an in-memory copy and reports, so a dry run exercises every rule.
+- Result: 209 days, 997 tasks (12 open, matching `02-11-2026.md`), 1,500 events, 136
+  meetings, no failures. The worklog skill and the `/today` pane moved to the service the same
+  day; the old skill and pane are kept in `~/.claude/backups/`.
 
 ## 11. To verify at build time
 
@@ -246,7 +254,6 @@ MCP App is decided at build time (see §11).
 
 | Item | Hook already in the design |
 |---|---|
-| Import of the 213-file history | `imported_from`, past timestamps accepted, importer safe to repeat |
 | Pushing the notes repo to its remote | none needed; separate work |
 | Timesheet skill reading from the MCP | the report keeps its headings meanwhile |
 | The service starting agents on assignment | `assignee` + assignment events; a dispatcher subscribes later |

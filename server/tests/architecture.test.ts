@@ -20,6 +20,8 @@ const allowedImports: Record<string, string[]> = {
    services: ["services", "entities", "utils"],
    persistence: ["persistence", "services", "entities", "utils"],
    integrations: ["integrations", "entities", "utils"],
+   // one-off parsing of the old markdown day files; pure, and written to storage only by the root
+   migration: ["migration", "entities", "utils"],
    useCases: ["useCases", "services", "integrations", "entities", "utils"],
    "adapters/agents": ["adapters/agents", "useCases", "entities", "utils"],
    "adapters/http": ["adapters/http", "adapters/agents", "useCases", "entities", "utils"],
