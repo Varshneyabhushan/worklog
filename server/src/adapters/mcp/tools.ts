@@ -221,7 +221,8 @@ export function registerTools(server: McpServer, useCases: McpUseCases, logger: 
    for (const spec of specs(useCases)) {
       const run = async (args: unknown): Promise<CallToolResult> => {
          try {
-            const result = await spec.useCase.execute(args ?? {});
+            // the SDK passes arguments already parsed by our schema; back to JSON, so the use case parses what was sent
+            const result = await spec.useCase.execute(JSON.parse(JSON.stringify(args ?? {})));
             return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
          } catch (err) {
             return toolError(err, spec.name, logger);
