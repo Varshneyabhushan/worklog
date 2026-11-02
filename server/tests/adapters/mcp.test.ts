@@ -35,6 +35,16 @@ describe("MCP adapter", () => {
       expect(JSON.parse(text(today)).backlogCount).toBe(1);
    });
 
+   it("accepts arguments the SDK has already parsed, such as a meeting's instants", async () => {
+      const client = await connect();
+      const result = await client.callTool({
+         name: "add_meeting",
+         arguments: { title: "Syncup", startsAt: "2026-11-03T08:00:00+05:30" },
+      });
+      expect(result.isError).toBeFalsy();
+      expect(JSON.parse(text(result)).startsAt).toBe("2026-11-03T02:30:00.000Z");
+   });
+
    it("reports a domain error as a tool error", async () => {
       const client = await connect();
       const result = await client.callTool({ name: "get_task", arguments: { id: "W-9" } });

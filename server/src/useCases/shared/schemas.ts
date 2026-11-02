@@ -15,7 +15,13 @@ export const ActorSchema = z.enum(EVENT_ACTORS).default("self");
 export const LocalDateSchema = z
    .string()
    .refine(isLocalDate, { error: "expected a real date as YYYY-MM-DD" });
-export const InstantSchema = z.iso.datetime({ offset: true }).transform((value) => new Date(value));
+// the MCP SDK hands tools already-parsed arguments, so a second parse must accept its own output
+export const InstantSchema = z
+   .preprocess(
+      (value) => (value instanceof Date ? value.toISOString() : value),
+      z.iso.datetime({ offset: true }),
+   )
+   .transform((value) => new Date(value));
 export const TagsSchema = z
    .array(z.string())
    .transform((tags) => [...new Set(tags.map(normalizeTag))]);
