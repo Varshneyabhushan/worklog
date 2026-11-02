@@ -1,0 +1,250 @@
+# Worklog service: requirements
+
+Status: agreed 02-11-2026. Code layout and implementation are not covered here; they come next.
+
+## 1. Purpose
+
+Replace the markdown-file worklog with a task store that Claude (and Codex) read and write
+through MCP, and generate each day's markdown report from it at sign-off.
+
+Today one markdown file per day is the task store, the UI and the report at once. That forces
+the whole format to be parsed twice (Python scripts and the `/today` pane), copies open tasks
+into a new file every morning so a task has no identity or history, and makes every Claude edit
+an exact-text replace on a file open in an editor on `/mnt/c`.
+
+The service holds the **data**. The worklog skill keeps the **procedure**: the morning and
+night routines, `az` / `gh` / Linear / git steps, and the rules on wording and approval.
+
+## 2. Shape
+
+| Item | Decision |
+|---|---|
+| Repo | `~/repos/worklog`, local git |
+| Process | Python MCP server, streamable HTTP on `127.0.0.1:<port>`, run as a systemd user service in WSL |
+| Store | SQLite at `~/.local/share/worklog/worklog.db` (WSL disk, never `/mnt/c`); the service is the only process that opens it |
+| Clients | Claude Code (terminal and the Desktop Code tab) and Codex, both over MCP. The Desktop Chat tab is out of scope |
+| Human interfaces | a local web UI served by the same process, and an MCP App rendered inside Claude |
+| Backup | the night routine runs a `.dump` of the database to `notes/worklog/db/worklog.sql` and commits it with the day's report. The binary `.db` is never committed |
+| Rules | the skill holds every instruction. An `AGENTS.md` mirrors the data rules for Codex. Tool descriptions say only what a tool does and takes |
+
+The service enforces what code can check: valid dates, normalised tag names, one level of
+sub-tasks, legal status transitions, known ids. It does not pretend to enforce approval of
+wording, which only the skill's conversation can establish.
+
+## 3. Tasks
+
+### 3.1 Fields
+
+| Field | Notes |
+|---|---|
+| `id` | short and readable, `W-142` |
+| `title` | the task as you would say it |
+| `description` | **required**, markdown, editable. The brief: what the task is. Suggested shape Goal / Context / Done when, not enforced. Every edit is recorded as an event |
+| `status` | see 3.2 |
+| `priority` | `high` / `normal` / `low`, default `normal`. For a task from a Linear ticket, Claude suggests the ticket's priority and you set it |
+| `due` | optional, date only. Set only for a real deadline, never invented |
+| `blocked_on`, `blocked_since` | the waiting field: free-text reason and since-when. Can sit on any open status |
+| `tags` | zero or more, lowercase-hyphenated. The **first tag is the display group** in `/today`, the UI and the report; the rest are for search. No tag → group "Other". Existing tags are offered for reuse; rename / merge exist for clean-up |
+| `parent_id` | one level of sub-tasks only |
+| `links` | list of `{kind, url, label}`, kind ∈ `ticket` / `pr` / `slack` / `artifact` / `meeting` / `other`. The first link is primary. A `ticket` link gives the task its chip |
+| `assignee` | `self` or an **agent name** (e.g. `investigator`), not the tool it runs on. Free text for now, with existing names suggested |
+| `source_key` | optional, unique across **all** tasks: `linear:ABC-123`, `gh:org/repo#31`, `slack-todo:<permalink>`, `pipeline:<id>`. Set automatically from a ticket or PR link |
+| `imported_from` | source file path, for imported tasks |
+| `created_at`, `picked_at`, `done_at` | timestamps; full history lives in events |
+
+Not included: estimates, time tracking, watchers, multiple assignees.
+
+### 3.2 Statuses
+
+`backlog` → `picked` → `in_review` → `done`, plus `dropped`.
+
+- `backlog`: real work, not on your plate yet.
+- `picked`: on your plate. Stays picked across days until you change it. The morning routine
+  flags stale picks ("picked 5 days ago, no update since 26-10").
+- `in_review`: a session believes its part is finished. Waits for you.
+- `done`: finished, timestamped.
+- `dropped`: abandoned, kept for history, never shown as pending.
+
+Waiting is **not** a status: `blocked_on` can sit on `backlog`, `picked` or `in_review`.
+
+Transitions:
+- Any session may move a task to `in_review`, with an update saying what was done and what to check.
+- **Moving out of `in_review` (to `done`, or back to `picked` with a review update) is possible
+  only from the web UI or the MCP App.** It is exposed as a UI-only tool hidden from the model,
+  so no Claude or Codex session can call it.
+- Your own tasks may go `picked` → `done` directly, through any interface.
+- A `done` task is not picked again except by an explicit `reopen`.
+
+### 3.3 Sort order
+
+In `/today`, the board, the list and the backlog:
+
+1. overdue
+2. due today
+3. `high`
+4. `normal`, then `low`, each by soonest due, then oldest pick
+
+Waiting tasks form their own group, with how long they have waited.
+
+### 3.4 Routine-created tasks and reopening
+
+- Routines (morning pipeline check, Linear assigned tickets, Slack To-dos, unmerged PRs) create
+  tasks through an upsert keyed on `source_key`. An existing task gets its title and links
+  refreshed; status, priority, tags and updates are left alone. A new task gets a description
+  the routine writes from its source (ticket summary, PR body, failing graders).
+- If a routine finds that a `done` task's problem is back, it **reopens** that task with a
+  `by: routine` update saying why. Reopening is an event, so the reopen count is visible
+  (`↻3`).
+- `reopen` takes the target status, `picked` or `backlog`. The service does not choose; the
+  skill decides per source from rules you write ("pipeline RED → picked").
+- A `dropped` task is never reopened automatically. The routine tells you and reopens only on your yes.
+
+### 3.5 Search
+
+Full-text search (SQLite FTS5) over task titles, descriptions, updates and day notes,
+combinable with tags, status, assignee and a date range.
+
+## 4. Updates
+
+- An update is a timestamped milestone on one task. Every task update belongs to a task.
+- `by: self`: wording you approved at the time (the skill drafts, you say yes). A session you
+  are driving, Claude Code or Codex, counts as `self`. These form the Summary.
+- `by: routine`: factual status lines written by a routine without approval. Excluded from the
+  Summary unless you promote one.
+- Updates are append-only history. Claude never rewrites one on its own; a correction or
+  reword happens only on your word, and new facts are new updates.
+- An update can be moved to the right task, or retracted (hidden from reports, kept in the
+  database).
+- `log_work` creates a task and its first update in one call, as `done` or `picked`, for
+  unplanned work. It may be a sub-task of the task it came out of.
+- A task may be marked `done` with no update. It shows in the report as its title with ✓, and
+  the night routine lists such tasks as gaps for you to fill or leave.
+
+## 5. Days
+
+- Calendar days, IST, midnight boundary. Every update, event and note belongs to the day it
+  happened, whenever the day is signed off.
+- A `days` record per date holds that day's **notes** and, once signed off, its **frozen
+  Summary**.
+- Day notes are free entries for the day that belong to no task. They come in through the skill.
+- **A day closes only when you run the night routine.** Nothing closes a day in the background.
+  An unclosed day keeps taking that day's activity. The morning routine and the web UI warn
+  about earlier days not signed off ("21-10 not signed off").
+- `night DD-MM-YYYY` builds that day's report from that day's activity only. Re-running it
+  regenerates that day's frozen Summary and file; that is the only way a past day changes.
+
+## 6. Meetings
+
+A separate `schedule` table, not tasks: date, start time, title, join link, source
+(`calendar` / `manual`), optional `cancelled` / `postponed` mark.
+
+- Filled by the morning calendar step or added by you. A meeting without a time is a task, not a meeting.
+- Never carried over, never in the Summary, no ticking: shown past or upcoming by the clock.
+- Work that comes out of a meeting is an ordinary task, optionally linked to it.
+
+## 7. Routine steps
+
+- The steps of the morning and night routines are defined in the skill (key, label, manual or
+  automated). `checklist.md` is retired.
+- Each day's progress through them is stored as `routine_steps` rows: date, routine, step key,
+  done time, done by (`claude` / `you`). Automated steps are ticked by Claude; manual ones stay
+  open until you say they are done.
+
+## 8. Events and undo
+
+- Every change is an event in `task_events` (create, field change, status change, pick,
+  unpick, reopen, wait, update added / moved / retracted, description edit).
+- `undo` reverts the last change, or a named one, by writing a reversing event. Nothing is erased.
+- There is no hard delete for tasks: a mistaken task is `dropped` with reason "created by mistake".
+- `purge` truly deletes (e.g. a secret pasted into an update), only when you ask for it by name.
+- Assignment changes are events too; a future dispatcher would subscribe to them (§12).
+
+## 9. Outputs
+
+### 9.1 Day report (markdown)
+
+- Path unchanged: `notes/worklog/<month> <year>/DD-MM-YYYY.md`, full lowercase month name.
+- **Fully generated** at sign-off from the `days` record and that day's activity; nothing is
+  typed into it by hand.
+- Headings kept compatible with the timesheet skill's extractor, which reads `# TODOs` and `# Summary`
+  and stays unchanged:
+  - `# TODOs`: the day's tasks as checkboxes, `- [x]` done that day, `- [ ]` still open, with
+    `⌛` and wait length.
+  - `# Summary`: per first tag, task → that day's `self` updates, ✓ on tasks done that day.
+  - `# Notes`: the day notes.
+- Old day files stay as they are, a read-only archive.
+
+### 9.2 `/today` pane
+
+Reads a `today.json` snapshot the service rewrites after every change. Top to bottom:
+
+1. Schedule: past entries dimmed, cancelled struck through
+2. Routine steps left: one compact line, hidden when none are left
+3. For review
+4. Picked: grouped by first tag, in sort order; id, chip, ↗ link, due badge, reopen count,
+   sub-tasks indented
+5. Waiting: reason and wait length
+6. Today's progress: done today and today's `self` updates
+7. Day notes
+8. Backlog: collapsed to a count
+
+Routine updates and anything older than today are left out, except wait lengths.
+
+### 9.3 Web UI (v1)
+
+Served by the service on `127.0.0.1`.
+
+- **Board:** Backlog / Picked / In review / Done (today) columns, Waiting as a card badge,
+  drag between columns. Dragging out of In review is the UI-only review action.
+- **List:** the same tasks in sort order, filtered by tag, status, assignee and full-text search.
+- **Task page:** title, editable description, fields, links, sub-tasks, updates timeline, add-update box.
+- **Day-end banner:** when an earlier day is not signed off. It points you to the night routine
+  and does not close the day itself, because closing needs your approval of the Summary and
+  the git commit.
+- **Day notes:** list of days, each with its notes and frozen Summary, read from the database,
+  not the markdown.
+- Not in v1: editing meetings, routine steps, settings, a theme toggle (follows the system).
+
+### 9.4 MCP App
+
+A smaller version of the web UI rendered inside Claude: the `/today` view plus task cards
+carrying the UI-only review buttons. Whether `/today` stays a separate pane or becomes this
+MCP App is decided at build time (see §11).
+
+## 10. Migration
+
+- One-time import of the **open** items (picked TODOs and Backlog) from the latest day file.
+- `##` heading → first tag; sub-items → sub-tasks; `⌛ reason` → `blocked_on`; `⌛ postponed`
+  → `backlog`; links parsed into `links`; ticket / PR link → `source_key`; priority `normal`,
+  no due dates; a drafted description for each.
+- `blocked_since` from the first day file where that `⌛` appears.
+- Long noisy lines (e.g. "pipeline RED 4 runs in a row …") come in as a short title, with
+  the details as their first `by: routine` update.
+- **Dry run first:** the importer prints what it would create, you correct it in one pass,
+  then it writes.
+- Clean cutover: from then on the routines read the database only. `prepare_day.py`,
+  `edit_today.py`, `locate_day.py` and `checklist.md` are retired (kept in git history).
+- Until history is imported, "when did I last touch X" searches the database first and
+  greps the archive for anything before the cutover.
+
+## 11. To verify at build time
+
+- MCP Apps: that a tool can be made callable from the app UI only and hidden from the model,
+  and that the Desktop Code tab renders MCP Apps.
+- Codex: that it can connect to an HTTP MCP server, not only one it launches itself.
+- WSL: whether WSL stays up with no terminal open; if it idles out, a Windows login task
+  that starts it.
+- Timesheet extractor: that it reads the generated `# TODOs` / `# Summary` correctly.
+
+## 12. Deferred (design must not block these)
+
+| Item | Hook already in the design |
+|---|---|
+| Import of the 213-file history | `imported_from`, past timestamps accepted, importer safe to repeat |
+| Pushing the notes repo to its remote | none needed; separate work |
+| Timesheet skill reading from the MCP | the report keeps its headings meanwhile |
+| The service starting agents on assignment | `assignee` + assignment events; a dispatcher subscribes later |
+| Work sessions and claims on a task | not modelled yet; updates are append-only, so concurrent writers cannot clobber each other |
+| Agent attribution on updates (`by: <agent>`) | `by` is already a field; new values only |
+| Actors / experts table | `assignee` values map onto its rows |
+| Code layout and implementation plan | next discussion |
