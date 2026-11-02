@@ -7,17 +7,34 @@
       "node": ">=22.12"
    },
    "scripts": {
+      "dev": "nodemon",
       "prebuild": "rm -rf dist/",
       "build": "tsc",
+      "start": "node dist/index.js",
       "test": "vitest run",
       "typecheck": "tsc --noEmit -p tsconfig.test.json",
       "format": "prettier --config prettierrc.json --write \"src/**/*.{ts,js,json}\" \"tests/**/*.ts\" \"*.json\"",
       "format:check": "prettier --config prettierrc.json --check \"src/**/*.{ts,js,json}\" \"tests/**/*.ts\" \"*.json\""
    },
    "devDependencies": {
+      "@types/better-sqlite3": "^9.6.0",
+      "@types/express": "^5.0.6",
       "@types/node": "^22.20.5",
+      "@types/supertest": "^7.2.1",
+      "nodemon": "^3.1.14",
+      "pino-pretty": "^13.2.0",
       "prettier": "^3.9.10",
+      "supertest": "^7.3.1",
+      "ts-node": "^10.9.2",
       "typescript": "^5.9.3",
       "vitest": "^5.1.0"
+   },
+   "dependencies": {
+      "@modelcontextprotocol/sdk": "^1.32.2",
+      "better-sqlite3": "^13.0.3",
+      "dotenv": "^16.6.1",
+      "express": "^5.3.0",
+      "pino": "^10.4.0",
+      "zod": "^4.6.7"
    }
 }

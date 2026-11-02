@@ -1,5 +1,5 @@
 import type { LocalDate } from "../../utils/dates";
-import { InvalidStatusTransitionError } from "./errors";
+import { InvalidStatusTransitionError, TaskUndoError } from "./errors";
 import {
    TaskEvent,
    type EventActor,
@@ -142,6 +142,53 @@ export class Task {
       return this.append({}, data, at, by);
    }
 
+   /** The latest saved status or field change that hasn't been undone, nor is itself an undo. */
+   get lastUndoable(): TaskEvent | null {
+      const undone = new Set(this.events.map((event) => event.reverts));
+      return (
+         this.latest(
+            (event) =>
+               event.id !== null &&
+               event.reverts === null &&
+               !undone.has(event.id) &&
+               (event.data.kind === "status_changed" || event.data.kind === "field_changed"),
+         ) ?? null
+      );
+   }
+
+   /** Restores what a status or field change replaced; refused once the task has moved on. */
+   undo(eventId: number, at: Date, by: EventActor): Task {
+      const target = this.events.find((event) => event.id === eventId);
+      if (!target) throw new TaskUndoError(`${this.id} has no event ${eventId}`);
+      if (this.events.some((event) => event.reverts === eventId)) {
+         throw new TaskUndoError(`event ${eventId} on ${this.id} is already undone`);
+      }
+
+      const { data } = target;
+      if (data.kind === "status_changed") {
+         if (this.status !== data.to) {
+            throw new TaskUndoError(`${this.id} has moved since event ${eventId}`);
+         }
+         const reverse: TaskEventData = { kind: "status_changed", from: data.to, to: data.from };
+         return this.append({ status: data.from }, reverse, at, by, eventId);
+      }
+      if (data.kind === "field_changed") {
+         if (JSON.stringify(this[data.field]) !== JSON.stringify(data.to)) {
+            throw new TaskUndoError(
+               `${this.id}'s ${data.field} has changed since event ${eventId}`,
+            );
+         }
+         const reverse: TaskEventData = {
+            kind: "field_changed",
+            field: data.field,
+            from: data.to,
+            to: data.from,
+         };
+         return this.append({ [data.field]: data.from }, reverse, at, by, eventId);
+      }
+      throw new TaskUndoError(`a ${data.kind} event cannot be undone`);
+   }
+
    toJSON() {
       return {
          ...this,
@@ -163,8 +210,9 @@ export class Task {
       data: TaskEventData,
       at: Date,
       by: EventActor,
+      reverts: number | null = null,
    ): Task {
-      const event = new TaskEvent({ id: null, at, by, reverts: null, data });
+      const event = new TaskEvent({ id: null, at, by, reverts, data });
       return new Task({ ...this, ...changes, events: [...this.events, event] });
    }
 
@@ -185,6 +233,20 @@ export function formatTaskId(sequence: number): string {
 
 export function isTaskId(value: string): boolean {
    return TASK_ID.test(value);
+}
+
+const LINEAR_ISSUE = /linear\.app\/[^/]+\/issue\/([A-Z][A-Z0-9]*-\d+)/;
+const GITHUB_PR = /github\.com\/([^/]+\/[^/]+)\/pull\/(\d+)/;
+
+/** A ticket or PR link names the source the morning routine will look the task up by. */
+export function sourceKeyFromLinks(links: TaskLink[]): string | null {
+   for (const link of links) {
+      const issue = link.kind === "ticket" ? LINEAR_ISSUE.exec(link.url) : null;
+      if (issue) return `linear:${issue[1]}`;
+      const pr = link.kind === "pr" ? GITHUB_PR.exec(link.url) : null;
+      if (pr) return `gh:${pr[1]}#${pr[2]}`;
+   }
+   return null;
 }
 
 export function normalizeTag(raw: string): string {

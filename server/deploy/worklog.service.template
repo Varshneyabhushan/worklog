@@ -1,0 +1,14 @@
+[Unit]
+Description=Worklog service: tasks, updates and day reports over REST and MCP
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=@WORKDIR@
+ExecStart=@NODE@ dist/index.js
+Restart=on-failure
+RestartSec=3
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=default.target

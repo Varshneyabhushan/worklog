@@ -1,15 +1,7 @@
+import { ConflictError, InvariantError } from "../../utils/errors";
 import type { TaskStatus } from "./status";
 
-export class TaskInvariantError extends Error {
-   constructor(
-      message: string,
-      readonly field: string,
-      readonly value?: unknown,
-   ) {
-      super(message);
-      this.name = new.target.name;
-   }
-}
+export class TaskInvariantError extends InvariantError {}
 
 export class InvalidStatusTransitionError extends TaskInvariantError {
    constructor(
@@ -19,3 +11,5 @@ export class InvalidStatusTransitionError extends TaskInvariantError {
       super(`a task cannot move from ${from} to ${to}`, "status", to);
    }
 }
+
+export class TaskUndoError extends ConflictError {}

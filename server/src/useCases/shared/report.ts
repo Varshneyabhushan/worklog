@@ -1,0 +1,79 @@
+import path from "path";
+import { compareForPlan, type Task } from "../../entities/task";
+import { daysBetween, localDateOf, type LocalDate } from "../../utils/dates";
+import type { DayActivity } from "./dayActivity";
+
+// The headings `# TODOs` and `# Summary` are read by the timesheet skill's extractor; keep them.
+const EMPTY = "…";
+
+export function reportFilePath(root: string, date: LocalDate): string {
+   const [year, month, day] = date.split("-");
+   const monthName = new Intl.DateTimeFormat("en-GB", { month: "long", timeZone: "UTC" })
+      .format(new Date(`${date}T00:00:00Z`))
+      .toLowerCase();
+   return path.join(root, `${monthName} ${year}`, `${day}-${month}-${year}.md`);
+}
+
+export function renderSummary(activity: DayActivity): string {
+   const summarised = activity.tasks.filter(
+      (task) => activity.updatesByTask.has(task.id) || activity.doneIds.has(task.id),
+   );
+   const sections = groupByDisplay(summarised, activity.date).map(([group, tasks]) => {
+      const lines = tasks.flatMap((task) => [
+         `- ${taskLine(task)}${activity.doneIds.has(task.id) ? " ✓" : ""}`,
+         ...(activity.updatesByTask.get(task.id) ?? []).map((update) => bullet(update.body, 1)),
+      ]);
+      return `## ${group}\n\n${lines.join("\n")}`;
+   });
+   return sections.length > 0 ? sections.join("\n\n") : EMPTY;
+}
+
+export function renderReport(activity: DayActivity, summary: string, timeZone: string): string {
+   const todos = groupByDisplay(activity.tasks, activity.date).map(([group, tasks]) => {
+      const lines = tasks.map((task) => {
+         const box = activity.doneIds.has(task.id) ? "[x]" : "[ ]";
+         return `- ${box} ${taskLine(task)}${waitSuffix(task, activity.date, timeZone)}`;
+      });
+      return `## ${group}\n\n${lines.join("\n")}`;
+   });
+   const notes = activity.day.notes.map((note) => bullet(note.body, 0));
+
+   return (
+      [
+         "# TODOs",
+         todos.length > 0 ? todos.join("\n\n") : EMPTY,
+         "# Summary",
+         summary,
+         "# Notes",
+         notes.length > 0 ? notes.join("\n") : EMPTY,
+      ].join("\n\n") + "\n"
+   );
+}
+
+function groupByDisplay(tasks: Task[], date: LocalDate): [string, Task[]][] {
+   const groups = new Map<string, Task[]>();
+   for (const task of [...tasks].sort((a, b) => compareForPlan(a, b, date))) {
+      groups.set(task.displayGroup, [...(groups.get(task.displayGroup) ?? []), task]);
+   }
+   return [...groups.entries()];
+}
+
+function taskLine(task: Task): string {
+   const link = task.primaryLink;
+   const title = link ? `[${task.title}](${link.url})` : task.title;
+   return `${title} · ${task.id}`;
+}
+
+function waitSuffix(task: Task, date: LocalDate, timeZone: string): string {
+   if (task.blockedOn === null) return "";
+   const since = task.waitingSince;
+   const days = since ? daysBetween(localDateOf(since, timeZone), date) : null;
+   return ` ⌛ ${task.blockedOn}${days !== null ? ` (${days}d)` : ""}`;
+}
+
+/** A multi-line body as one bullet: its further lines are indented to stay inside it. */
+function bullet(body: string, depth: number): string {
+   const pad = "  ".repeat(depth);
+   const [first, ...rest] = body.trim().split("\n");
+   return [`${pad}- ${first}`, ...rest.map((line) => `${pad}  ${line}`)].join("\n");
+}

@@ -1,10 +1,3 @@
-export class UpdateInvariantError extends Error {
-   constructor(
-      message: string,
-      readonly field: string,
-      readonly value?: unknown,
-   ) {
-      super(message);
-      this.name = new.target.name;
-   }
-}
+import { InvariantError } from "../../utils/errors";
+
+export class UpdateInvariantError extends InvariantError {}

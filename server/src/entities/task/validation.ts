@@ -114,7 +114,9 @@ export function assertValidHistory(events: TaskEvent[], status: TaskStatus): voi
          throw new TaskInvariantError("a task is created once", "events", event);
       }
       if (event.data.kind === "status_changed") {
-         if (event.data.from !== current || !canTransition(event.data.from, event.data.to)) {
+         // an undo restores the earlier status, which the forward table needn't allow
+         const allowed = event.reverts !== null || canTransition(event.data.from, event.data.to);
+         if (event.data.from !== current || !allowed) {
             throw new TaskInvariantError(
                `history moves ${event.data.from} → ${event.data.to} while the task is ${current}`,
                "events",
