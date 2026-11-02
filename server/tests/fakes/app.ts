@@ -21,6 +21,10 @@ export class FakeClock implements Clock {
 export class MemoryFiles implements FileWriter {
    readonly written = new Map<string, string>();
 
+   read(filePath: string): string | null {
+      return this.written.get(filePath) ?? null;
+   }
+
    writeAtomic(filePath: string, content: string): void {
       this.written.set(filePath, content);
    }

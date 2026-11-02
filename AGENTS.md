@@ -30,6 +30,9 @@ A healthy boot logs `✅ database …` then `✅ listening on …`.
 Gotchas:
 - Keep the data folder on the WSL disk. SQLite locking is unreliable on `/mnt/c`; only the day
   reports and the SQL backup go there.
+- **A code change only reaches the running service after `npm run build` and
+  `systemctl --user restart worklog`** (or `./deploy/install.sh`). Check against the restarted
+  service, never against data you can't restore.
 - The service has no authentication. It binds to loopback, and the MCP SDK's Host check refuses
   requests whose `Host` isn't loopback (DNS rebinding).
 - `deploy/install.sh` bakes the absolute `node` path into the unit, because nvm's node is not on

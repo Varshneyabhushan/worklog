@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { REPORT_MARKER } from "../../src/useCases/shared/report";
+import { ReportNotGeneratedError } from "../../src/useCases/signOffDay/errors";
 import { TASK, makeApp } from "../fakes/app";
 
 describe("day use cases", () => {
@@ -51,6 +53,7 @@ describe("day use cases", () => {
       );
       expect(files.written.get(path)).toBe(
          [
+            REPORT_MARKER,
             "# TODOs",
             "## Other\n\n- [ ] Waiting one · W-1 ⌛ OpenVPN access (1d)",
             "## evals\n\n- [x] [Route model calls through UMG](https://github.com/org/repo/pull/31) · W-2",
@@ -60,6 +63,19 @@ describe("day use cases", () => {
             "- Bug bash moved to Thursday.",
          ].join("\n\n") + "\n",
       );
+   });
+
+   it("refuses to overwrite a day file it did not write, before freezing anything", async () => {
+      const { useCases, files } = makeApp();
+      const path = "/reports/november 2026/03-11-2026.md";
+      files.written.set(path, "# TODOs\n\n- [x] written by hand\n");
+
+      await expect(useCases.signOffDay.execute({})).rejects.toThrow(ReportNotGeneratedError);
+      expect(files.written.get(path)).toBe("# TODOs\n\n- [x] written by hand\n");
+      expect((await useCases.getDay.execute({ date: "2026-11-03" })).day.isSignedOff).toBe(false);
+
+      files.written.set(path, `${REPORT_MARKER}\n\nolder generated copy\n`);
+      await expect(useCases.signOffDay.execute({})).resolves.toMatchObject({ path });
    });
 
    it("lists earlier days with activity that were never signed off", async () => {

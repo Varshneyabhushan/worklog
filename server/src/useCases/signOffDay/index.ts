@@ -4,8 +4,8 @@ import { localDateOf } from "../../utils/dates";
 import type { UseCaseContext } from "../shared/context";
 import { gatherDay, type ActivityServices } from "../shared/dayActivity";
 import { parseInput } from "../shared/parseInput";
-import { renderReport, renderSummary, reportFilePath } from "../shared/report";
-import { InvalidSignOffDayInputError } from "./errors";
+import { REPORT_MARKER, renderReport, renderSummary, reportFilePath } from "../shared/report";
+import { InvalidSignOffDayInputError, ReportNotGeneratedError } from "./errors";
 import { SignOffDaySchema } from "./schema";
 
 export default class SignOffDayUseCase {
@@ -21,11 +21,17 @@ export default class SignOffDayUseCase {
       const parsed = parseInput(SignOffDaySchema, input, InvalidSignOffDayInputError);
       const date = parsed.date ?? localDateOf(now, this.ctx.timeZone);
 
+      // checked before anything is frozen: the archive's hand-written day files must survive
+      const path = reportFilePath(this.reportRoot, date);
+      const existing = this.files.read(path);
+      if (existing !== null && !existing.includes(REPORT_MARKER)) {
+         throw new ReportNotGeneratedError(path);
+      }
+
       const activity = gatherDay(this.services, date, this.ctx.timeZone);
       const summary = renderSummary(activity);
       // database first, file after: if the write fails, signing off again rewrites both
       const day = this.services.days.signOff(date, summary, now);
-      const path = reportFilePath(this.reportRoot, date);
       this.files.writeAtomic(path, renderReport({ ...activity, day }, summary, this.ctx.timeZone));
 
       this.ctx.changes.publish({ kind: "day", id: date });

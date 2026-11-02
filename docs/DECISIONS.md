@@ -110,6 +110,18 @@ path and enables it.
 
 ---
 
+## D11 — A marker line guards hand-written day files
+
+**Choice:** reports start with a marker comment; `sign_off_day` refuses to overwrite a file
+without it, before freezing anything.
+
+**Why:** reports and the hand-written archive share a folder.
+
+**Update 2026-11-03:** the guard was first tested live against a build that predated it and
+overwrote `02-11-2026.md`; restored from git. Rebuild and restart before any live check.
+
+---
+
 ## Open decisions / TODO
 
 - Web UI and MCP App (`web/`): not built yet.

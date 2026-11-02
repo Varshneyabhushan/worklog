@@ -177,7 +177,9 @@ entirely to the worklog skill. The service stores none of it.
     `⌛` and wait length.
   - `# Summary`: per first tag, task → that day's updates, ✓ on tasks done that day.
   - `# Notes`: the day notes.
-- Old day files stay as they are, a read-only archive.
+- Old day files stay as they are, a read-only archive. Every generated report starts with a
+  marker line, and sign-off refuses to overwrite a file without it, checked before anything is
+  frozen.
 
 ### 9.2 `/today` pane
 
