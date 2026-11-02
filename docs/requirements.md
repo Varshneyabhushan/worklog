@@ -125,11 +125,13 @@ combinable with tags, status, assignee and a date range.
 
 ## 5. Days
 
-- Calendar days, IST, midnight boundary. Every update, event and note belongs to the day it
+- Calendar days, IST, midnight boundary. Every update and event belongs to the day it
   happened, whenever the day is signed off.
 - A `days` record per date holds that day's **notes** and, once signed off, its **frozen
-  Summary**.
-- Day notes are free entries for the day that belong to no task. They come in through the skill.
+  Summary**. A day owns its notes.
+- Day notes are free entries for the day that belong to no task: plain text, no tags or links.
+  They come in through the skill. Unlike updates, a note may be added to an earlier day,
+  because that day's Summary matters; on a signed-off day it means signing that day off again.
 - **A day closes only when you run the night routine.** Nothing closes a day in the background.
   An unclosed day keeps taking that day's activity. The morning routine and the web UI warn
   about earlier days not signed off ("21-10 not signed off").
@@ -148,11 +150,8 @@ A separate `schedule` table, not tasks: start and end instants, title, join link
 
 ## 7. Routine steps
 
-- The steps of the morning and night routines are defined in the skill (key, label, manual or
-  automated). `checklist.md` is retired.
-- Each day's progress through them is stored as `routine_steps` rows: date, routine, step key,
-  done time, done by (`claude` / `you`). Automated steps are ticked by Claude; manual ones stay
-  open until you say they are done.
+The morning and night routines, their steps and the day's progress through them belong
+entirely to the worklog skill. The service stores none of it.
 
 ## 8. Events and undo
 
@@ -185,14 +184,13 @@ A separate `schedule` table, not tasks: start and end instants, title, join link
 Reads a `today.json` snapshot the service rewrites after every change. Top to bottom:
 
 1. Schedule: past entries dimmed, cancelled struck through
-2. Routine steps left: one compact line, hidden when none are left
-3. For review
-4. Picked: grouped by first tag, in sort order; id, chip, ↗ link, due badge, reopen count,
+2. For review
+3. Picked: grouped by first tag, in sort order; id, chip, ↗ link, due badge, reopen count,
    sub-tasks indented
-5. Waiting: reason and wait length
-6. Today's progress: done today and today's updates
-7. Day notes
-8. Backlog: collapsed to a count
+4. Waiting: reason and wait length
+5. Today's progress: done today and today's updates
+6. Day notes
+7. Backlog: collapsed to a count
 
 Anything older than today is left out, except wait lengths.
 
@@ -209,7 +207,7 @@ Served by the service on `127.0.0.1`.
   the git commit.
 - **Day notes:** list of days, each with its notes and frozen Summary, read from the database,
   not the markdown.
-- Not in v1: editing meetings, routine steps, settings, a theme toggle (follows the system).
+- Not in v1: editing meetings, settings, a theme toggle (follows the system).
 
 ### 9.4 MCP App
 
