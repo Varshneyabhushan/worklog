@@ -108,13 +108,16 @@ combinable with tags, status, assignee and a date range.
 
 - An update is a timestamped milestone on one task. Every task update belongs to a task.
 - `by: self`: wording you approved at the time (the skill drafts, you say yes). A session you
-  are driving, Claude Code or Codex, counts as `self`. These form the Summary.
-- `by: routine`: factual status lines written by a routine without approval. Excluded from the
-  Summary unless you promote one.
-- Updates are append-only history. Claude never rewrites one on its own; a correction or
-  reword happens only on your word, and new facts are new updates.
-- An update can be moved to the right task, or retracted (hidden from reports, kept in the
-  database).
+  are driving, Claude Code or Codex, counts as `self`.
+- `by: routine`: factual status lines written by a routine without approval.
+- A day's Summary is every update posted that day, `self` and `routine` alike; `by` is only a label.
+- An update belongs to the day it was posted, as in Linear. There is no backdating: an update
+  remembered late is posted today, with a prefix in its body saying which day it is about
+  (e.g. "(for 30-10) …").
+- Claude never rewrites an update on its own; a correction or reword happens only on your word,
+  and new facts are new updates. An edit is recorded on the task with the old and new wording.
+- An update can be moved to the right task, or deleted. A deleted update is gone; the task's
+  history records only that it was deleted.
 - `log_work` creates a task and its first update in one call, as `done` or `picked`, for
   unplanned work. It may be a sub-task of the task it came out of.
 - A task may be marked `done` with no update. It shows in the report as its title with ✓, and
@@ -152,11 +155,13 @@ A separate `schedule` table, not tasks: date, start time, title, join link, sour
 
 ## 8. Events and undo
 
-- Every change is an event in `task_events` (create, field change, status change, pick,
-  unpick, reopen, wait, update added / moved / retracted, description edit).
-- `undo` reverts the last change, or a named one, by writing a reversing event. Nothing is erased.
+- Every change to a task is an event in its history (create, field change, status change, pick,
+  unpick, reopen, wait, update added / edited / moved / deleted, description edit). A task
+  carries its events; its created, picked, done and waiting times are read from them.
+- `undo` reverts the last change, or a named one, by writing a reversing event.
 - There is no hard delete for tasks: a mistaken task is `dropped` with reason "created by mistake".
-- `purge` truly deletes (e.g. a secret pasted into an update), only when you ask for it by name.
+- `purge` truly deletes a task or day note (e.g. a secret pasted into one), only when you ask for
+  it by name. A mistaken update is simply deleted.
 - Assignment changes are events too; a future dispatcher would subscribe to them (§12).
 
 ## 9. Outputs
@@ -170,7 +175,7 @@ A separate `schedule` table, not tasks: date, start time, title, join link, sour
   and stays unchanged:
   - `# TODOs`: the day's tasks as checkboxes, `- [x]` done that day, `- [ ]` still open, with
     `⌛` and wait length.
-  - `# Summary`: per first tag, task → that day's `self` updates, ✓ on tasks done that day.
+  - `# Summary`: per first tag, task → that day's updates, ✓ on tasks done that day.
   - `# Notes`: the day notes.
 - Old day files stay as they are, a read-only archive.
 
@@ -184,11 +189,11 @@ Reads a `today.json` snapshot the service rewrites after every change. Top to bo
 4. Picked: grouped by first tag, in sort order; id, chip, ↗ link, due badge, reopen count,
    sub-tasks indented
 5. Waiting: reason and wait length
-6. Today's progress: done today and today's `self` updates
+6. Today's progress: done today and today's updates
 7. Day notes
 8. Backlog: collapsed to a count
 
-Routine updates and anything older than today are left out, except wait lengths.
+Anything older than today is left out, except wait lengths.
 
 ### 9.3 Web UI (v1)
 

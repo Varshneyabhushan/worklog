@@ -19,8 +19,9 @@ export type TaskField = (typeof TASK_FIELDS)[number];
 
 export type UpdateEventData =
    | { kind: "update_added"; updateId: number }
+   | { kind: "update_edited"; updateId: number; from: string; to: string }
    | { kind: "update_moved"; updateId: number; fromTaskId: string; toTaskId: string }
-   | { kind: "update_retracted"; updateId: number };
+   | { kind: "update_deleted"; updateId: number };
 
 export type TaskEventData =
    | { kind: "created"; status: TaskStatus }
