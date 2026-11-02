@@ -50,7 +50,7 @@ wording, which only the skill's conversation can establish.
 | `assignee` | `self` or an **agent name** (e.g. `investigator`), not the tool it runs on. Free text for now, with existing names suggested |
 | `source_key` | optional, unique across **all** tasks: `linear:ABC-123`, `gh:org/repo#31`, `slack-todo:<permalink>`, `pipeline:<id>`. Set automatically from a ticket or PR link |
 | `imported_from` | source file path, for imported tasks |
-| `created_at`, `picked_at`, `done_at` | timestamps; full history lives in events |
+| `createdAt`, `pickedAt`, `doneAt`, `waitingSince` | not stored: read from the task's events |
 
 Not included: estimates, time tracking, watchers, multiple assignees.
 
@@ -260,4 +260,3 @@ Done 03-11-2026 with `src/importHistory.ts`: every day file, not just the open i
 | Work sessions and claims on a task | not modelled yet; updates are append-only, so concurrent writers cannot clobber each other |
 | Agent attribution on updates (`by: <agent>`) | `by` is already a field; new values only |
 | Actors / experts table | `assignee` values map onto its rows |
-| Code layout and implementation plan | next discussion |
