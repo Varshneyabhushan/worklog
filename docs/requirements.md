@@ -138,11 +138,12 @@ combinable with tags, status, assignee and a date range.
 
 ## 6. Meetings
 
-A separate `schedule` table, not tasks: date, start time, title, join link, source
-(`calendar` / `manual`), optional `cancelled` / `postponed` mark.
+A separate `schedule` table, not tasks: start and end instants, title, join link, source
+(`calendar` / `manual`), and a `cancelled` flag.
 
 - Filled by the morning calendar step or added by you. A meeting without a time is a task, not a meeting.
-- Never carried over, never in the Summary, no ticking: shown past or upcoming by the clock.
+- A manual entry may have no end; it counts as over once it starts.
+- Never carried over, never in the Summary, no ticking: shown upcoming, in progress or over by the clock.
 - Work that comes out of a meeting is an ordinary task, optionally linked to it.
 
 ## 7. Routine steps
