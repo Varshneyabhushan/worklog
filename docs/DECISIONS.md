@@ -141,9 +141,25 @@ overwrote `02-11-2026.md`; restored from git. Rebuild and restart before any liv
 
 ---
 
+## D12 — One `web/` project builds the board and the MCP view
+
+**Choice:** React and Vite in `web/`, with two builds: the board in `web/dist`, served by the
+service at `/`, and the MCP view as one inlined HTML file in `web/dist/mcp`, which the MCP
+adapter serves as `ui://worklog/today.html`. They share the types, the task card and the
+styles. Plain CSS with custom properties; native drag and drop; a hash router.
+
+**Why:** an MCP host loads a view from a single HTML document and the view reaches the service
+only through tools, so it needs its own build, but the cards and shapes should not be written
+twice. The board is one user's local tool: a CSS framework, a drag library and a router package
+add more than they save.
+
+**Rejected:** writing the review buttons to call REST from the view — the view's iframe would
+need CORS on an unauthenticated service, which any web page could then use.
+
+---
+
 ## Open decisions / TODO
 
-- Web UI and the MCP view's page (`web/`): not built yet.
 - Verify that the Claude Desktop Code tab renders the `show_today` view and keeps
   `decide_review` from the model, and that Codex connects to HTTP MCP.
 - Whether WSL stays up with no terminal open; if not, a Windows login task that starts it.

@@ -4,7 +4,8 @@ Guidance for coding agents working in this repository. `CLAUDE.md` imports this 
 
 ## Commands
 
-Run from `server/`:
+Run from `server/` (the service) or `web/` (the board and the MCP view, `npm run dev` on
+:5173 proxying to the service, `npm run build`, `npm test`):
 
 ```bash
 npm run dev                                       # nodemon + ts-node on src/
@@ -32,7 +33,8 @@ Gotchas:
   reports and the SQL backup go there.
 - **A code change only reaches the running service after `npm run build` and
   `systemctl --user restart worklog`** (or `./deploy/install.sh`). Check against the restarted
-  service, never against data you can't restore.
+  service, never against data you can't restore. A `web/` build is picked up without a restart,
+  but the service serves `web/dist` only if it existed at startup.
 - The service has no authentication. It binds to loopback, and the MCP SDK's Host check refuses
   requests whose `Host` isn't loopback (DNS rebinding).
 - `deploy/install.sh` bakes the absolute `node` path into the unit, because nvm's node is not on
