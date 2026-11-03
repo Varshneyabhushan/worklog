@@ -35,6 +35,9 @@ describe("history", () => {
             ),
          ),
       ).toBe("undid a change: priority: normal to high");
+      expect(
+         describeEvent(event({ kind: "update_summary_changed", updateId: 3, inSummary: false })),
+      ).toBe("took an update out of the Summary");
    });
 
    it("shows an update once, as the update itself", () => {
@@ -50,6 +53,7 @@ describe("history", () => {
                body: "done the thing",
                by: "self",
                at: "2026-11-03T06:00:00.000Z",
+               inSummary: true,
             },
          ],
       );

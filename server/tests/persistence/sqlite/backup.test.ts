@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import { describe, expect, it } from "vitest";
 import SqliteBackupSource from "../../../src/persistence/sqlite/backup";
+import { MIGRATIONS } from "../../../src/persistence/sqlite/schema";
 import SqliteSearchIndex from "../../../src/persistence/sqlite/search";
 import { TASK, makeApp } from "../../fakes/app";
 
@@ -19,7 +20,7 @@ describe("SQL dump", () => {
             db.prepare(`SELECT * FROM ${table}`).all(),
          );
       }
-      expect(restored.pragma("user_version", { simple: true })).toBe(1);
+      expect(restored.pragma("user_version", { simple: true })).toBe(MIGRATIONS.length);
       expect(new SqliteSearchIndex(restored).search("thursday", ["note"], 5)).toHaveLength(1);
    });
 });

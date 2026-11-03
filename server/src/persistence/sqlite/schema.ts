@@ -95,4 +95,7 @@ export const MIGRATIONS: readonly string[] = [
       DELETE FROM search WHERE kind = 'note' AND ref = CAST(old.id AS TEXT);
    END;
    `,
+   `
+   ALTER TABLE updates ADD COLUMN in_summary INTEGER NOT NULL DEFAULT 1;
+   `,
 ];

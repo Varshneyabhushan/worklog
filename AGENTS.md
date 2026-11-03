@@ -67,7 +67,7 @@ Repo-specific notes:
   every change appends an event, and created, picked, done and waiting times are read from the
   events. Statuses: backlog, picked, in_review, done, dropped. Sub-tasks are one level deep.
 - **Update**: a progress note on one task, belonging to the day it was posted. Every update of a
-  day goes into that day's Summary.
+  day goes into that day's Summary, except a remark (`inSummary: false`).
 - **Day**: a calendar date in the configured time zone, owning its notes and, once signed off, its
   frozen Summary. Notes, unlike updates, may be added to an earlier day.
 - **Meeting**: a schedule entry with exact start and end instants; not a task.

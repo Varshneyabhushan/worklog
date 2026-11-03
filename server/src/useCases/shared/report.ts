@@ -19,9 +19,7 @@ export function reportFilePath(root: string, date: LocalDate): string {
 }
 
 export function renderSummary(activity: DayActivity): string {
-   const summarised = activity.tasks.filter(
-      (task) => activity.updatesByTask.has(task.id) || activity.doneIds.has(task.id),
-   );
+   const summarised = activity.tasks.filter((task) => activity.updatesByTask.has(task.id));
    const sections = groupByDisplay(summarised, activity.date).map(([group, tasks]) => {
       const lines = tasks.flatMap((task) => [
          `- ${taskLine(task)}${activity.doneIds.has(task.id) ? " ✓" : ""}`,

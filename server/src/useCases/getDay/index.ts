@@ -27,7 +27,7 @@ export default class GetDayUseCase {
          day: activity.day,
          tasks: activity.tasks,
          doneTaskIds: [...activity.doneIds],
-         updates: [...activity.updatesByTask.values()].flat(),
+         updates: activity.updates,
       };
    }
 }

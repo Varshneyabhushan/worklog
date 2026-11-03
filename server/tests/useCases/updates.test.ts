@@ -42,4 +42,28 @@ describe("update use cases", () => {
          UpdateNotFoundError,
       );
    });
+
+   it("moves an update in and out of the Summary, recording each change", async () => {
+      const app = await withTwoTasks();
+      const remark = await app.useCases.addUpdate.execute({
+         taskId: "W-1",
+         body: "Pipeline still red.",
+         by: "routine",
+         inSummary: false,
+      });
+      expect(remark.inSummary).toBe(false);
+
+      const promoted = await app.useCases.editUpdate.execute({ id: remark.id, inSummary: true });
+      expect(promoted).toMatchObject({ inSummary: true, body: "Pipeline still red." });
+      expect(await lastEvent(app, "W-1")).toEqual({
+         kind: "update_summary_changed",
+         updateId: remark.id,
+         inSummary: true,
+      });
+
+      const events = (await app.useCases.getTask.execute({ id: "W-1" })).task.events.length;
+      await app.useCases.editUpdate.execute({ id: remark.id, inSummary: true });
+      expect((await app.useCases.getTask.execute({ id: "W-1" })).task.events).toHaveLength(events);
+      await expect(app.useCases.editUpdate.execute({ id: remark.id })).rejects.toThrow();
+   });
 });

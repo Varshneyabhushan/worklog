@@ -8,6 +8,7 @@ interface UpdateRow {
    body: string;
    by: UpdateAuthor;
    at: string;
+   in_summary: number;
 }
 
 export default class SqliteUpdateRepository implements UpdateRepository {
@@ -15,8 +16,14 @@ export default class SqliteUpdateRepository implements UpdateRepository {
 
    add(update: NewUpdate): Update {
       const { lastInsertRowid } = this.db
-         .prepare("INSERT INTO updates (task_id, body, by, at) VALUES (?, ?, ?, ?)")
-         .run(update.taskId, update.body, update.by, update.at.toISOString());
+         .prepare("INSERT INTO updates (task_id, body, by, at, in_summary) VALUES (?, ?, ?, ?, ?)")
+         .run(
+            update.taskId,
+            update.body,
+            update.by,
+            update.at.toISOString(),
+            update.inSummary ? 1 : 0,
+         );
       return this.getById(Number(lastInsertRowid)) as Update;
    }
 
@@ -42,8 +49,8 @@ export default class SqliteUpdateRepository implements UpdateRepository {
 
    save(update: Update): Update {
       this.db
-         .prepare("UPDATE updates SET task_id = ?, body = ? WHERE id = ?")
-         .run(update.taskId, update.body, update.id);
+         .prepare("UPDATE updates SET task_id = ?, body = ?, in_summary = ? WHERE id = ?")
+         .run(update.taskId, update.body, update.inSummary ? 1 : 0, update.id);
       return this.getById(update.id) as Update;
    }
 
@@ -59,5 +66,6 @@ function toUpdate(row: UpdateRow): Update {
       body: row.body,
       by: row.by,
       at: new Date(row.at),
+      inSummary: row.in_summary === 1,
    });
 }

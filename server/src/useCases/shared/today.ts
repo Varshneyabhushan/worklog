@@ -39,7 +39,7 @@ export function buildToday(services: TodayServices, now: Date, timeZone: string)
       groups.set(task.displayGroup, [...(groups.get(task.displayGroup) ?? []), task]);
    }
 
-   const updates = services.updates.listBetween(from, to);
+   const updates = services.updates.listBetween(from, to).filter((update) => update.inSummary);
    const updatedIds = [...new Set(updates.map((update) => update.taskId))];
    const updatedTasks = new Map(
       services.tasks.list({ ids: updatedIds }).map((task) => [task.id, task]),

@@ -111,6 +111,10 @@ combinable with tags, status, assignee and a date range.
   are driving, Claude Code or Codex, counts as `self`.
 - `by: routine`: factual status lines written by a routine without approval.
 - A day's Summary is every update posted that day, `self` and `routine` alike; `by` is only a label.
+- A **remark** (`inSummary: false`) is an update kept out of the Summary and today's progress:
+  it stays on the task's timeline, in search and in `get_day`. It is for status nobody worked
+  for, such as a routine's red or green report. Updates default to the Summary, and an update
+  can be moved in or out of it later; each move is recorded on the task.
 - An update belongs to the day it was posted, as in Linear. There is no backdating: an update
   remembered late is posted today, with a prefix in its body saying which day it is about
   (e.g. "(for 30-10) …").
@@ -120,7 +124,8 @@ combinable with tags, status, assignee and a date range.
   history records only that it was deleted.
 - `log_work` creates a task and its first update in one call, as `done` or `picked`, for
   unplanned work. It may be a sub-task of the task it came out of.
-- A task may be marked `done` with no update. It shows in the report as its title with ✓, and
+- A task may be marked `done` with no update. It is ticked under the report's `# TODOs` but left
+  out of the Summary, which lists only tasks with an update that counts (remarks don't), and
   the night routine lists such tasks as gaps for you to fill or leave.
 
 ## 5. Days
@@ -175,7 +180,8 @@ entirely to the worklog skill. The service stores none of it.
   and stays unchanged:
   - `# TODOs`: the day's tasks as checkboxes, `- [x]` done that day, `- [ ]` still open, with
     `⌛` and wait length.
-  - `# Summary`: per first tag, task → that day's updates, ✓ on tasks done that day.
+  - `# Summary`: per first tag, each task with an update that day (remarks excluded) → those
+    updates, ✓ on tasks done that day.
   - `# Notes`: the day notes.
 - Old day files stay as they are, a read-only archive. Every generated report starts with a
   marker line, and sign-off refuses to overwrite a file without it, checked before anything is

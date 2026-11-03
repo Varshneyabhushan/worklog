@@ -14,11 +14,15 @@ export default class AddUpdateUseCase {
    ) {}
 
    async execute(input: unknown): Promise<Update> {
-      const { taskId, body, by } = parseInput(AddUpdateSchema, input, InvalidAddUpdateInputError);
+      const { taskId, body, by, inSummary } = parseInput(
+         AddUpdateSchema,
+         input,
+         InvalidAddUpdateInputError,
+      );
       this.tasks.get(taskId);
       const now = this.ctx.clock.now();
       // update first, history after: a crash between leaves an update missing only its history line
-      const update = this.updates.add(taskId, body, by, now);
+      const update = this.updates.add(taskId, body, by, now, inSummary);
       this.tasks.record(taskId, { kind: "update_added", updateId: update.id }, now, by);
       this.ctx.changes.publish({ kind: "update", id: String(update.id) });
       return update;

@@ -7,6 +7,7 @@ export function makeUpdate(overrides: Partial<UpdateProps> = {}): Update {
       body: "Moved the judge calls to UMG.",
       by: "self",
       at: new Date("2026-11-02T06:00:00Z"),
+      inSummary: true,
       ...overrides,
    });
 }

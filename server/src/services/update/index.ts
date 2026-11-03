@@ -13,8 +13,8 @@ export interface UpdateChange {
 export class UpdateService {
    constructor(private readonly repo: UpdateRepository) {}
 
-   add(taskId: string, body: string, by: UpdateAuthor, at: Date): Update {
-      const update = { taskId, body, by, at };
+   add(taskId: string, body: string, by: UpdateAuthor, at: Date, inSummary = true): Update {
+      const update = { taskId, body, by, at, inSummary };
       assertValidUpdate({ id: 0, ...update });
       return this.repo.add(update);
    }
@@ -27,6 +27,10 @@ export class UpdateService {
 
    edit(id: number, body: string): UpdateChange {
       return this.replace(id, { body });
+   }
+
+   setInSummary(id: number, inSummary: boolean): UpdateChange {
+      return this.replace(id, { inSummary });
    }
 
    move(id: number, taskId: string): UpdateChange {
@@ -47,7 +51,10 @@ export class UpdateService {
       return this.repo.listBetween(from, to);
    }
 
-   private replace(id: number, changes: { body?: string; taskId?: string }): UpdateChange {
+   private replace(
+      id: number,
+      changes: { body?: string; taskId?: string; inSummary?: boolean },
+   ): UpdateChange {
       const before = this.get(id);
       const next = new Update({ ...before, ...changes });
       assertValidUpdate(next);

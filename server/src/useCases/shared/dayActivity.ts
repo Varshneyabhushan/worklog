@@ -12,6 +12,9 @@ export interface DayActivity {
    /** Tasks done that day, tasks updated that day, and every task currently picked or in review. */
    tasks: Task[];
    doneIds: Set<string>;
+   /** Every update posted that day, remarks included. */
+   updates: Update[];
+   /** The updates that go into the Summary, by task. */
    updatesByTask: Map<string, Update[]>;
 }
 
@@ -32,7 +35,7 @@ export function gatherDay(
    const current = services.tasks.list({ statuses: ["picked", "in_review"] });
 
    const updatesByTask = new Map<string, Update[]>();
-   for (const update of updates) {
+   for (const update of updates.filter((update) => update.inSummary)) {
       updatesByTask.set(update.taskId, [...(updatesByTask.get(update.taskId) ?? []), update]);
    }
 
@@ -44,6 +47,7 @@ export function gatherDay(
       day: services.days.get(date),
       tasks: services.tasks.list({ ids: [...ids] }),
       doneIds: new Set(done.map((task) => task.id)),
+      updates,
       updatesByTask,
    };
 }

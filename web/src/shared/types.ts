@@ -55,6 +55,7 @@ export interface Update {
    body: string;
    by: string;
    at: string;
+   inSummary: boolean;
 }
 
 export interface TaskDetail {

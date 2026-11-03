@@ -118,13 +118,33 @@ export function TaskPage({ id }: { id: string }) {
                         {entry.kind === "event" ? (
                            <span className="muted">{entry.text}</span>
                         ) : (
-                           <Markdown text={entry.update.body} />
+                           <div className={entry.update.inSummary ? undefined : "remark"}>
+                              <Markdown text={entry.update.body} />
+                              {!entry.update.inSummary && <span className="badge">remark</span>}
+                              <button
+                                 className="quiet"
+                                 onClick={() =>
+                                    act(() =>
+                                       api.setInSummary(entry.update.id, !entry.update.inSummary),
+                                    )
+                                 }
+                              >
+                                 {entry.update.inSummary
+                                    ? "Make it a remark"
+                                    : "Put in the Summary"}
+                              </button>
+                           </div>
                         )}
                      </li>
                   ))}
                </ol>
                <AddUpdate
-                  onAdd={(body) => act(() => api.addUpdate(task.id, body), "Update posted")}
+                  onAdd={(body, inSummary) =>
+                     act(
+                        () => api.addUpdate(task.id, body, inSummary),
+                        inSummary ? "Update posted" : "Remark posted",
+                     )
+                  }
                />
             </section>
          </div>
@@ -231,23 +251,39 @@ function Description({ task, onSave }: { task: Task; onSave: (text: string) => P
    );
 }
 
-function AddUpdate({ onAdd }: { onAdd: (body: string) => Promise<boolean> }) {
+function AddUpdate({ onAdd }: { onAdd: (body: string, inSummary: boolean) => Promise<boolean> }) {
    const [body, setBody] = useState("");
+   const [inSummary, setInSummary] = useState(true);
    return (
       <form
          className="add-update"
          onSubmit={async (event) => {
             event.preventDefault();
-            if (await onAdd(body.trim())) setBody("");
+            if (await onAdd(body.trim(), inSummary)) {
+               setBody("");
+               setInSummary(true);
+            }
          }}
       >
          <textarea
             rows={3}
-            placeholder="What changed? It goes into today's Summary."
+            placeholder={
+               inSummary
+                  ? "What changed? It goes into today's Summary."
+                  : "A remark for this task only."
+            }
             value={body}
             onChange={(event) => setBody(event.target.value)}
             aria-label="New update"
          />
+         <label className="toggle">
+            <input
+               type="checkbox"
+               checked={!inSummary}
+               onChange={(event) => setInSummary(!event.target.checked)}
+            />
+            Remark: keep it out of the Summary
+         </label>
          <button type="submit" className="primary" disabled={body.trim() === ""}>
             Post update
          </button>

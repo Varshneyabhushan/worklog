@@ -14,15 +14,33 @@ export default class EditUpdateUseCase {
    ) {}
 
    async execute(input: unknown): Promise<Update> {
-      const { id, body, by } = parseInput(EditUpdateSchema, input, InvalidEditUpdateInputError);
-      const { before, after } = this.updates.edit(id, body);
-      this.tasks.record(
-         after.taskId,
-         { kind: "update_edited", updateId: id, from: before.body, to: after.body },
-         this.ctx.clock.now(),
-         by,
+      const { id, body, inSummary, by } = parseInput(
+         EditUpdateSchema,
+         input,
+         InvalidEditUpdateInputError,
       );
+      const now = this.ctx.clock.now();
+      let update = this.updates.get(id);
+      if (body !== undefined && body !== update.body) {
+         const { before, after } = this.updates.edit(id, body);
+         this.tasks.record(
+            after.taskId,
+            { kind: "update_edited", updateId: id, from: before.body, to: after.body },
+            now,
+            by,
+         );
+         update = after;
+      }
+      if (inSummary !== undefined && inSummary !== update.inSummary) {
+         update = this.updates.setInSummary(id, inSummary).after;
+         this.tasks.record(
+            update.taskId,
+            { kind: "update_summary_changed", updateId: id, inSummary },
+            now,
+            by,
+         );
+      }
       this.ctx.changes.publish({ kind: "update", id: String(id) });
-      return after;
+      return update;
    }
 }

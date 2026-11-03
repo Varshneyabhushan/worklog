@@ -240,7 +240,7 @@ button.quiet {
    border-left: 2px solid var(--rule);
 }
 
-.timeline li {
+.timeline > li {
    display: grid;
    grid-template-columns: 6.5rem auto 1fr;
    gap: 0.5rem;
@@ -249,7 +249,7 @@ button.quiet {
    font-size: 0.9rem;
 }
 
-.timeline li.update {
+.timeline > li.update {
    background: var(--surface);
    border-radius: 0 8px 8px 0;
    margin: 0.35rem 0;
@@ -267,6 +267,12 @@ button.quiet {
 
 .timeline .markdown p:first-child {
    margin-top: 0;
+}
+
+.remark {
+   color: var(--ink-soft);
+   border-left: 2px dotted var(--ink-soft);
+   padding-left: 0.6rem;
 }
 
 .add-update {
@@ -410,7 +416,7 @@ dialog::backdrop {
       max-height: none;
    }
 
-   .timeline li {
+   .timeline > li {
       grid-template-columns: 1fr;
       gap: 0.1rem;
    }

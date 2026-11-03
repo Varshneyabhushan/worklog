@@ -158,6 +158,22 @@ need CORS on an unauthenticated service, which any web page could then use.
 
 ---
 
+## D13 — Remarks: updates kept out of the Summary
+
+**Choice:** an update carries `inSummary`, true by default. A remark (false) stays on the task's
+timeline and in search but is left out of the Summary, the report and today's progress. The
+skill posts a routine's status reports, such as the daily skill-evals red line, as remarks. A task
+reaches the Summary only through an update that counts, so one finished with no update, or
+only remarks, is ticked under `# TODOs` and nowhere else.
+
+**Why:** the Summary feeds the timesheet and should hold work done. A red pipeline reported
+every morning made the Summary repeat itself, while the same lines still belong on the task.
+
+**Rejected:** using day notes for them, which loses the task; and a separate remarks table,
+which would duplicate the update's history, editing and moving for one boolean.
+
+---
+
 ## Open decisions / TODO
 
 - Verify that the Claude Desktop Code tab renders the `show_today` view and keeps

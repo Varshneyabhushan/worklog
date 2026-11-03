@@ -47,6 +47,10 @@ export function describeEvent(event: TaskEvent): string | null {
          return `moved an update from ${data.fromTaskId} to ${data.toTaskId}`;
       case "update_deleted":
          return "deleted an update";
+      case "update_summary_changed":
+         return data.inSummary
+            ? "put an update in the Summary"
+            : "took an update out of the Summary";
       default:
          return null;
    }

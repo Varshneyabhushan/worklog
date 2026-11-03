@@ -65,6 +65,36 @@ describe("day use cases", () => {
       );
    });
 
+   it("leaves remarks out of the Summary and today's progress, but not out of the day", async () => {
+      const { useCases } = makeApp();
+      await useCases.createTask.execute({ ...TASK, status: "picked", tags: ["evals"] });
+      await useCases.createTask.execute({ ...TASK, status: "picked", tags: ["evals"] });
+      await useCases.addUpdate.execute({ taskId: "W-1", body: "Fixed the judge." });
+      await useCases.addUpdate.execute({ taskId: "W-1", body: "Run 12 red.", inSummary: false });
+      await useCases.addUpdate.execute({ taskId: "W-2", body: "Run 13 red.", inSummary: false });
+
+      const today = await useCases.getToday.execute({});
+      expect(today.progress.updates.map((u) => [u.task.id, u.updates.length])).toEqual([
+         ["W-1", 1],
+      ]);
+      expect((await useCases.getDay.execute({ date: "2026-11-03" })).updates).toHaveLength(3);
+
+      const { day } = await useCases.signOffDay.execute({});
+      expect(day.summary).toContain("Fixed the judge.");
+      expect(day.summary).not.toContain("red");
+   });
+
+   it("leaves a task done without an update out of the Summary, but ticks it in the TODOs", async () => {
+      const { useCases, files } = makeApp();
+      await useCases.createTask.execute({ ...TASK, status: "picked", tags: ["worklog"] });
+      await useCases.addUpdate.execute({ taskId: "W-1", body: "Shipped.", inSummary: false });
+      await useCases.moveTask.execute({ id: "W-1", status: "done" });
+
+      const { day, path } = await useCases.signOffDay.execute({});
+      expect(day.summary).toBe("…");
+      expect(files.written.get(path)).toContain("- [x] Route model calls through UMG · W-1");
+   });
+
    it("refuses to overwrite a day file it did not write, before freezing anything", async () => {
       const { useCases, files } = makeApp();
       const path = "/reports/november 2026/03-11-2026.md";

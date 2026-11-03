@@ -123,13 +123,15 @@ function specs(useCases: McpUseCases): ToolSpec[] {
       },
       {
          name: "add_update",
-         description: "Add a progress update to a task.",
+         description:
+            "Add a progress update to a task. inSummary: false makes it a remark, kept on the task but out of the day's Summary.",
          schema: AddUpdateSchema,
          useCase: useCases.addUpdate,
       },
       {
          name: "edit_update",
-         description: "Replace an update's text; the task's history keeps the old wording.",
+         description:
+            "Replace an update's text, or move it in or out of the day's Summary with inSummary; the task's history keeps the old values.",
          schema: EditUpdateSchema,
          useCase: useCases.editUpdate,
       },

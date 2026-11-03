@@ -42,7 +42,10 @@ export const api = {
    reopen: (id: string, to: "picked" | "backlog", reason: string) =>
       call<Task>("POST", `/api/tasks/${id}/reopen`, { to, reason }),
    undo: (id: string) => call<Task>("POST", `/api/tasks/${id}/undo`, {}),
-   addUpdate: (id: string, body: string) => call("POST", `/api/tasks/${id}/updates`, { body }),
+   addUpdate: (id: string, body: string, inSummary: boolean) =>
+      call("POST", `/api/tasks/${id}/updates`, { body, inSummary }),
+   setInSummary: (updateId: number, inSummary: boolean) =>
+      call("PATCH", `/api/updates/${updateId}`, { inSummary }),
    days: (before?: string) =>
       call<Day[]>("GET", `/api/days?limit=30${before ? `&before=${before}` : ""}`),
    day: (date: string) => call<DayView>("GET", `/api/days/${date}`),

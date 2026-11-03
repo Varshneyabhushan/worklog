@@ -21,6 +21,7 @@ export type UpdateEventData =
    | { kind: "update_added"; updateId: number }
    | { kind: "update_edited"; updateId: number; from: string; to: string }
    | { kind: "update_moved"; updateId: number; fromTaskId: string; toTaskId: string }
+   | { kind: "update_summary_changed"; updateId: number; inSummary: boolean }
    | { kind: "update_deleted"; updateId: number };
 
 export type TaskEventData =
