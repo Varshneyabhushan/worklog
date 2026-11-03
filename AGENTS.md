@@ -42,7 +42,7 @@ Gotchas:
 
 The store behind the worklog skill: tasks with their history, progress updates, day notes,
 meetings, and each day's frozen Summary. Claude Code and Codex reach it over MCP, the web UI over
-REST and `/events`. At sign-off it writes the day's markdown report, which is output only.
+REST and `/events`, and the MCP view through the `show_today` and `decide_review` tools. At sign-off it writes the day's markdown report, which is output only.
 Requirements: `docs/requirements.md`.
 
 ## Architecture
@@ -72,8 +72,9 @@ Repo-specific notes:
 
 ## Invariants
 
-- **Only the user leaves review.** `decideReview` is exposed over REST for the UI and has no MCP
-  tool. `moveTask` refuses a task in review.
+- **Only the user leaves review.** `decideReview` is exposed over REST for the board and as
+  `decide_review` for the MCP view only: app-only, and keyed (D8). `moveTask` refuses a task in
+  review.
 - **A task's stored status equals its history's replay.** `assertValidHistory` checks it on every
   write; an undo event is the only move allowed outside the transition table.
 - **Source keys are unique across all tasks**, closed ones included, so a recurring problem

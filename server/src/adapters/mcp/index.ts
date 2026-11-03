@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { Router, type Request, type Response } from "express";
 import type { Logger } from "pino";
+import { registerTodayView, type McpAppOptions } from "./app";
 import { registerTools } from "./tools";
 import type { McpUseCases } from "./useCases";
 
@@ -11,11 +12,13 @@ export interface McpDependencies {
    useCases: McpUseCases;
    logger: Logger;
    version: string;
+   app?: McpAppOptions;
 }
 
 export function createMcpServer(deps: McpDependencies): McpServer {
    const server = new McpServer({ name: "worklog", version: deps.version });
    registerTools(server, deps.useCases, deps.logger);
+   if (deps.app) registerTodayView(server, deps.useCases, deps.app, deps.logger);
    return server;
 }
 

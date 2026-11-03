@@ -45,7 +45,7 @@ interface ToolSpec {
    useCase: Executable;
 }
 
-// decideReview is deliberately absent: only the board UI may leave review.
+// decideReview is absent here: it is registered in app.ts, callable only from the worklog view.
 function specs(useCases: McpUseCases): ToolSpec[] {
    return [
       {
@@ -219,15 +219,7 @@ function specs(useCases: McpUseCases): ToolSpec[] {
 
 export function registerTools(server: McpServer, useCases: McpUseCases, logger: Logger): void {
    for (const spec of specs(useCases)) {
-      const run = async (args: unknown): Promise<CallToolResult> => {
-         try {
-            // the SDK passes arguments already parsed by our schema; back to JSON, so the use case parses what was sent
-            const result = await spec.useCase.execute(JSON.parse(JSON.stringify(args ?? {})));
-            return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
-         } catch (err) {
-            return toolError(err, spec.name, logger);
-         }
-      };
+      const run = (args: unknown) => runUseCase(spec.useCase, args, spec.name, logger);
       if (spec.schema === null) {
          server.registerTool(spec.name, { description: spec.description }, () => run({}));
       } else {
@@ -237,6 +229,21 @@ export function registerTools(server: McpServer, useCases: McpUseCases, logger: 
             (args) => run(args),
          );
       }
+   }
+}
+
+export async function runUseCase(
+   useCase: Executable,
+   args: unknown,
+   tool: string,
+   logger: Logger,
+): Promise<CallToolResult> {
+   try {
+      // the SDK passes arguments already parsed by our schema; back to JSON, so the use case parses what was sent
+      const result = await useCase.execute(JSON.parse(JSON.stringify(args ?? {})));
+      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+   } catch (err) {
+      return toolError(err, tool, logger);
    }
 }
 

@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import fs from "fs";
 import http from "http";
 import path from "path";
@@ -38,7 +39,15 @@ function main() {
       useCases,
       logger,
       host: config.host,
-      mcpRouter: createMcpRouter({ useCases, logger, version }),
+      mcpRouter: createMcpRouter({
+         useCases,
+         logger,
+         version,
+         app: {
+            htmlPath: path.join(webDir, "mcp", "mcp-app.html"),
+            reviewKey: crypto.randomBytes(16).toString("hex"),
+         },
+      }),
       staticDir: fs.existsSync(webDir) ? webDir : null,
    });
 

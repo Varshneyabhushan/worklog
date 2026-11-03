@@ -2,6 +2,7 @@ import type AddDayNoteUseCase from "../../useCases/addDayNote";
 import type AddMeetingUseCase from "../../useCases/addMeeting";
 import type AddUpdateUseCase from "../../useCases/addUpdate";
 import type CreateTaskUseCase from "../../useCases/createTask";
+import type DecideReviewUseCase from "../../useCases/decideReview";
 import type DeleteDayNoteUseCase from "../../useCases/deleteDayNote";
 import type DeleteMeetingUseCase from "../../useCases/deleteMeeting";
 import type DeleteUpdateUseCase from "../../useCases/deleteUpdate";
@@ -33,6 +34,7 @@ export interface McpUseCases {
    logWork: LogWorkUseCase;
    editTask: EditTaskUseCase;
    moveTask: MoveTaskUseCase;
+   decideReview: DecideReviewUseCase;
    reopenTask: ReopenTaskUseCase;
    upsertTaskFromSource: UpsertTaskFromSourceUseCase;
    undoTaskChange: UndoTaskChangeUseCase;

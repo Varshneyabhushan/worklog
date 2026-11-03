@@ -214,8 +214,10 @@ Served by the service on `127.0.0.1`.
 ### 9.4 MCP App
 
 A smaller version of the web UI rendered inside Claude: the `/today` view plus task cards
-carrying the UI-only review buttons. Whether `/today` stays a separate pane or becomes this
-MCP App is decided at build time (see §11).
+carrying the UI-only review buttons. The `show_today` tool renders it; `decide_review` is
+marked app-only and also requires a key the service writes into the view's HTML, so a host
+without MCP Apps, which lists every tool, still cannot call it. Whether `/today` stays a separate
+pane or becomes this MCP App is decided once the Code tab is seen rendering it (see §11).
 
 ## 10. Migration
 
@@ -243,8 +245,8 @@ Done 03-11-2026 with `src/importHistory.ts`: every day file, not just the open i
 
 ## 11. To verify at build time
 
-- MCP Apps: that a tool can be made callable from the app UI only and hidden from the model,
-  and that the Desktop Code tab renders MCP Apps.
+- MCP Apps: that the Desktop Code tab renders the `show_today` view and hides `decide_review`
+  from the model.
 - Codex: that it can connect to an HTTP MCP server, not only one it launches itself.
 - WSL: whether WSL stays up with no terminal open; if it idles out, a Windows login task
   that starts it.

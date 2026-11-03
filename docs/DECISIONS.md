@@ -93,11 +93,17 @@ the Host check protects an unauthenticated localhost service from DNS rebinding.
 
 ## D8 — The review decision is not an MCP tool
 
-**Choice:** `decideReview` is reachable only over REST, for the web UI (and later the MCP App's
-UI-only tool).
+**Choice:** `decideReview` is reachable over REST for the web UI, and as the MCP tool
+`decide_review` only for the MCP App's view.
 
 **Why:** both Claude Code and Codex sessions act for the user through the same tools, so the
 service cannot tell them apart; leaving the tool out is the only enforcement that holds.
+
+**Update 2026-11-03:** the MCP App needs the decision as a tool. It is marked
+`visibility: ["app"]`, which a host with MCP Apps hides from the model, but a host without them
+lists every tool. So the tool also requires a key generated at startup and written into the
+view's HTML: a session would have to read the view's source to get it, which is not an
+accident. A restart changes the key, so an open view must be reopened.
 
 ---
 
@@ -137,6 +143,7 @@ overwrote `02-11-2026.md`; restored from git. Rebuild and restart before any liv
 
 ## Open decisions / TODO
 
-- Web UI and MCP App (`web/`): not built yet.
-- Verify that the Claude Desktop Code tab renders MCP Apps, and that Codex connects to HTTP MCP.
+- Web UI and the MCP view's page (`web/`): not built yet.
+- Verify that the Claude Desktop Code tab renders the `show_today` view and keeps
+  `decide_review` from the model, and that Codex connects to HTTP MCP.
 - Whether WSL stays up with no terminal open; if not, a Windows login task that starts it.
