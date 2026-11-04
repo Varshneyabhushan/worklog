@@ -19,9 +19,14 @@ export const InstantSchema = z.iso.datetime({ offset: true }).transform((value) 
 export const TagsSchema = z
    .array(z.string())
    .transform((tags) => [...new Set(tags.map(normalizeTag))]);
+// An MCP client sometimes sends the text "null" when it means to clear a field.
+export const ClearableTextSchema = z
+   .string()
+   .refine((value) => value.trim() !== "null", { error: 'to clear it, send null, not "null"' })
+   .nullable();
 export const LinkSchema = z.object({
    kind: z.enum(LINK_KINDS),
    url: z.string(),
-   label: z.string().nullable().default(null),
+   label: ClearableTextSchema.default(null),
 });
 export const LinksSchema = z.array(LinkSchema);

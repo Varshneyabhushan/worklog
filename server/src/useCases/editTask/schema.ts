@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
    ActorSchema,
+   ClearableTextSchema,
    LinksSchema,
    LocalDateSchema,
    PrioritySchema,
@@ -14,11 +15,11 @@ export const EditTaskSchema = z.object({
    description: z.string().optional(),
    priority: PrioritySchema.optional(),
    due: LocalDateSchema.nullable().optional(),
-   blockedOn: z.string().nullable().optional(),
+   blockedOn: ClearableTextSchema.optional(),
    tags: TagsSchema.optional(),
    parentId: TaskIdSchema.nullable().optional(),
    links: LinksSchema.optional(),
    assignee: z.string().optional(),
-   sourceKey: z.string().nullable().optional(),
+   sourceKey: ClearableTextSchema.optional(),
    by: ActorSchema,
 });

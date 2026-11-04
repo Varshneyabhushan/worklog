@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { InvalidStatusTransitionError } from "../../src/entities/task";
 import { InvalidCreateTaskInputError } from "../../src/useCases/createTask/errors";
 import { TaskNotInReviewError } from "../../src/useCases/decideReview/errors";
+import { InvalidEditTaskInputError } from "../../src/useCases/editTask/errors";
 import { TaskAwaitsReviewError } from "../../src/useCases/moveTask/errors";
 import { TASK, makeApp } from "../fakes/app";
 
@@ -109,6 +110,14 @@ describe("task use cases", () => {
       await useCases.editTask.execute({ id: "W-1", blockedOn: "OpenVPN access" });
       const undone = await useCases.undoTaskChange.execute({ id: "W-1" });
       expect(undone.blockedOn).toBeNull();
+   });
+
+   it('refuses the text "null" where null clears a field', async () => {
+      const { useCases } = makeApp();
+      await useCases.createTask.execute({ ...TASK, blockedOn: "OpenVPN access" });
+      await expect(useCases.editTask.execute({ id: "W-1", blockedOn: "null" })).rejects.toThrow(
+         InvalidEditTaskInputError,
+      );
    });
 
    it("maps an illegal move to the entity's transition error", async () => {

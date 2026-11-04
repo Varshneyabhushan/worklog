@@ -2,6 +2,7 @@ import { z } from "zod";
 import { SELF } from "../../entities/task";
 import {
    ActorSchema,
+   ClearableTextSchema,
    LinksSchema,
    LocalDateSchema,
    PrioritySchema,
@@ -15,13 +16,13 @@ export const CreateTaskSchema = z.object({
    status: z.enum(["backlog", "picked"]).default("backlog"),
    priority: PrioritySchema.default("normal"),
    due: LocalDateSchema.nullable().default(null),
-   blockedOn: z.string().nullable().default(null),
+   blockedOn: ClearableTextSchema.default(null),
    tags: TagsSchema.default([]),
    parentId: TaskIdSchema.nullable().default(null),
    links: LinksSchema.default([]),
    assignee: z.string().default(SELF),
    /** Omitted: taken from a ticket or PR link. Null: none. */
-   sourceKey: z.string().nullable().optional(),
-   importedFrom: z.string().nullable().default(null),
+   sourceKey: ClearableTextSchema.optional(),
+   importedFrom: ClearableTextSchema.default(null),
    by: ActorSchema,
 });
