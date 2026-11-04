@@ -239,14 +239,18 @@ export async function runUseCase(
    args: unknown,
    tool: string,
    logger: Logger,
+   present: (result: unknown) => CallToolResult = asJsonText,
 ): Promise<CallToolResult> {
    try {
       // the SDK passes arguments already parsed by our schema; back to JSON, so the use case parses what was sent
-      const result = await useCase.execute(JSON.parse(JSON.stringify(args ?? {})));
-      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      return present(await useCase.execute(JSON.parse(JSON.stringify(args ?? {}))));
    } catch (err) {
       return toolError(err, tool, logger);
    }
+}
+
+function asJsonText(result: unknown): CallToolResult {
+   return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
 }
 
 function toolError(err: unknown, tool: string, logger: Logger): CallToolResult {

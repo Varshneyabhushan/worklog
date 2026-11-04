@@ -53,6 +53,15 @@ describe("MCP adapter", () => {
       expect((view.contents[0] as { text: string }).text).toContain('content="k1"');
    });
 
+   it("hands the view today's data and the model a one-line gist", async () => {
+      const client = await connect();
+      await client.callTool({ name: "create_task", arguments: TASK });
+
+      const shown = await client.callTool({ name: "show_today", arguments: {} });
+      expect(text(shown)).toMatch(/^Showing the worklog for .*1 in the backlog/);
+      expect(shown.structuredContent).toMatchObject({ backlogCount: 1, forReview: [] });
+   });
+
    it("leaves the view out until it is built", async () => {
       const client = await connect(path.join(os.tmpdir(), "no-such-view.html"));
       const names = (await client.listTools()).tools.map((tool) => tool.name);

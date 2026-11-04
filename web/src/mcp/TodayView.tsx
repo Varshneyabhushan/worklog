@@ -8,6 +8,7 @@ import type { Task, Today } from "../shared/types";
 interface ToolResult {
    isError?: boolean;
    content?: { type: string; text?: string }[];
+   structuredContent?: unknown;
 }
 
 function textOf(result: ToolResult): string {
@@ -32,11 +33,11 @@ export function TodayView() {
    function show(result: ToolResult) {
       if (result.isError) return setError(textOf(result));
       setError(null);
-      setToday(JSON.parse(textOf(result)) as Today);
+      setToday(result.structuredContent as Today);
    }
 
    async function refresh(current: App) {
-      show((await current.callServerTool({ name: "get_today", arguments: {} })) as ToolResult);
+      show((await current.callServerTool({ name: "show_today", arguments: {} })) as ToolResult);
    }
 
    if (connectError)

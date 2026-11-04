@@ -4,6 +4,7 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "pino";
 import { z } from "zod";
 import { DecideReviewSchema } from "../../useCases/decideReview/schema";
+import type { Today } from "../../useCases/shared/today";
 import { runUseCase } from "./tools";
 import type { McpUseCases } from "./useCases";
 
@@ -23,6 +24,20 @@ const DecideReviewToolSchema = DecideReviewSchema.extend({ key: z.string() });
  * Hosts hide `visibility: ["app"]` tools from the model, but a host without MCP Apps lists every
  * tool; the key, written into the view's HTML, keeps decide_review out of reach there too.
  */
+/** The view gets the whole of today; the model, which only needs to talk about it, a line. */
+function forView(result: unknown): CallToolResult {
+   const today = result as Today;
+   const picked = today.picked.reduce((count, group) => count + group.tasks.length, 0);
+   const gist =
+      `Showing the worklog for ${today.date}: ${today.forReview.length} for review, ` +
+      `${picked} picked, ${today.waiting.length} waiting, ${today.backlogCount} in the backlog. ` +
+      "Call get_today for the details.";
+   return {
+      content: [{ type: "text", text: gist }],
+      structuredContent: JSON.parse(JSON.stringify(today)) as Record<string, unknown>,
+   };
+}
+
 export function registerTodayView(
    server: McpServer,
    useCases: McpUseCases,
@@ -55,7 +70,7 @@ export function registerTodayView(
             "Show the user today's worklog as an interactive view, with the review queue they decide on.",
          _meta: { ui: { resourceUri: TODAY_VIEW_URI }, "ui/resourceUri": TODAY_VIEW_URI },
       },
-      () => runUseCase(useCases.getToday, {}, "show_today", logger),
+      () => runUseCase(useCases.getToday, {}, "show_today", logger, forView),
    );
 
    server.registerTool(
